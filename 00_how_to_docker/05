@@ -1,1 +1,1 @@
-docker container ls --all
+docker run hello-world
