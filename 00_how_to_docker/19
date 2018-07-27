@@ -1,0 +1,1 @@
+docker run -d --name Abathur -p 3000:3000 python:2-slim
