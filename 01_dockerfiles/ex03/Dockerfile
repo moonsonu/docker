@@ -10,8 +10,8 @@ RUN apt-get update -yq \
 	nano \
 	gnupg
 
-RUN wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
-RUN apt-get update && apt-get install -yq --no-install-recommends gitlab-ce
+RUN wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/bionic/gitlab-ce_11.1.4-ce.0_amd64.deb/download.deb
+RUN apt-get update && EXTERNAL_URL="http://gitlab.example.com" apt-get install -yq gitlab-ce
 
 RUN mkdir -p /opt/gitlab/sv/sshd/supervise \
 	&& mkfifo /opt/gitlab/sv/sshd/supervise/ok \
