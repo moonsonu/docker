@@ -1,28 +1,32 @@
-FROM debian
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install wget -y
-RUN apt-get install git -y
-RUN apt-get install gcc -y
-RUN apt-get install libpam0g-dev
+FROM ubuntu
 
-WORKDIR /home/git
-RUN mkdir local
-RUN wget https://storage.googleapis.com/golang/go1.10.3.linux-amd64.tar.gz
-RUN tar -C /home/git/local -xzf go1.10.3.linux-amd64.tar.gz
+RUN apt-get update -yq \
+	&& DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
+	ca-certificates \
+	openssh-server \
+	wget \
+	apt-transport-https \
+	vim \
+	nano \
+	gnupg
 
-ENV GOROOT=/home/git/local/go' >> /home/git/.bashrc
-ENV GOPATH=/home/git/go' >> /home/git/.bashrc
-ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin' >> home/git/.bashrc
+RUN wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
+RUN apt-get update && apt-get install -yq --no-install-recommends gitlab-ce
 
-RUN mkdir -p $GOPATH/src/github.com/gogs
-RUN cd $GOPATH/src/github.com/gogs
-RUN git clone --depth=1 -b develop https://github.com/gogs/gogs
-RUN go get -u -tags "sqlite pam cert" github.com/gogs/gogs
-RUN cd $GOPATH/src/github.com/gogs/gogs
-RUN go build -tags "sqlite pam cert"
+RUN mkdir -p /opt/gitlab/sv/sshd/supervise \
+	&& mkfifo /opt/gitlab/sv/sshd/supervise/ok \
+	&& chmod a+x /opt/gitlab/sv/sshd/run \
+	&& ln -s /opt/gitlab/sv/sshd /opt/gitlab/service \
+	&& mkdir -p /var/run/sshd
 
-EXPOSE 3000
+RUN mkdir -p /assets/ && \
+	cp /etc/gitlab/gitlab.rb /assets/gitlab.rb
 
-CMD ["./gogs", "web"]
+EXPOSE 443 80 22
+VOLUME ["/etc/gitlab", "/var/opt/gitlab", "/var/log/gitlab"]
+COPY assets/wrapper /usr/local/bin/
+CMD ["/usr/local/bin/wrapper"]
 
-# https://gogs.io/docs/installation/install_from_source
+# https://hub.docker.com/r/gitlab/gitlab-ce/~/dockerfile/
+#docker build -t e03 .
+#docker run -it --rm -p 80:80 -p 21:22 --privileged e03
